@@ -1,11 +1,14 @@
+import sys
 import math
 import numpy as np
 import matplotlib.pyplot as plt
 
-id = 147
+if len(sys.argv) != 2:
+    exit(-1)
 
-#error_file = 'records/errors/%d.txt' % id
-error_file = 'records/vars_history/%d.txt' % id
+id = int(sys.argv[1])
+
+error_file = 'records/errors/%d.txt' % id
 
 X, Y, Z, th, wo, ka, f, x0, y0 = [], [], [], [], [], [], [], [], []
 
@@ -45,7 +48,7 @@ plt.plot(range(len(Z)), Z)
 plt.subplot(334)
 plt.title('th')
 plt.xlabel('iterations')
-plt.ylabel('error: (degrees)')
+plt.ylabel('error (degrees)')
 plt.plot(range(len(th)), th)
 
 plt.subplot(335)
