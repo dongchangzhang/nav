@@ -8,7 +8,7 @@ if len(sys.argv) != 2:
 
 id = int(sys.argv[1])
 
-error_file = 'records/errors/%d.txt' % id
+error_file = '../records/errors/%d.txt' % id
 
 X, Y, Z, th, wo, ka, f, x0, y0 = [], [], [], [], [], [], [], [], []
 

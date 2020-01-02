@@ -8,8 +8,8 @@ if len(sys.argv) != 2:
 
 id = int(sys.argv[1])
 
-vars_file = 'records/vars/%d.txt' % id
-vars_history_file = 'records/vars_history/%d.txt' % id
+vars_file = '../records/vars/%d.txt' % id
+vars_history_file = '../records/vars_history/%d.txt' % id
 
 X, Y, Z, th, wo, ka, f, x0, y0 = [], [], [], [], [], [], [], [], []
 
@@ -18,8 +18,10 @@ with open(vars_file) as file:
     lines = [line.strip().split(' ') for line in list(file)]
     real_vars = [float(x) for x in lines[0]]
     base_vars = [float(x) for x in lines[1]]
-    print(real_vars)
-    print(base_vars)
+    solved = [float(x) for x in lines[2]]
+    print('real', real_vars)
+    print('base', base_vars)
+    print('solved', solved)
 
 with open(vars_history_file) as file:
     for line in file:
