@@ -1,3 +1,4 @@
+
 #include "tool.h"
 #include "nav.h"
 
@@ -14,24 +15,23 @@ double degrees(double radians) {
     return radians * 180.0 / PI;
 }
 
-void get_ideal_data(int N, Eigen::MatrixXd &vars, std::vector<Landmark> &data, double len) {
+void get_ideal_data(int N, const Eigen::MatrixXd &vars, std::vector<Landmark> &data, double len, std::default_random_engine &engine) {
     Eigen::Matrix3d R;
     gen_R_matrix(vars, R);
-    std::default_random_engine engine;
-    engine.seed((unsigned) time(0));
-    // engine.seed(3);
     double boundary = len * tan(radians(22));
-    std::uniform_real_distribution<double> real_rand(-boundary, boundary);
+    std::normal_distribution<double> norm(0, sqrt(1/3.0));
+
+    // std::uniform_real_distribution<double> rand_xy(-boundary * 0.8, boundary * 0.8);
+    // std::uniform_real_distribution<double> rand_z(-10, 10);
 
     double X, Y, Z, mX, mY, mZ, x, y;
     for (int i = 0; i < N; ++i) {
-        X = real_rand(engine) * _M;
-        Y = real_rand(engine) * _M;
-        Z = real_rand(engine) * _M;
-
-        // std::cout << X << " " << Y << " " << Z << std::endl;
+        X = norm(engine) * boundary;
+        Y = norm(engine) * boundary;
+        Z = norm(engine) * boundary;
 
         auto mean_XYZ = get_mean_XYZ(X, Y, Z, vars, R);
+
         mX = mean_XYZ[0];
         mY = mean_XYZ[1];
         mZ = mean_XYZ[2];
@@ -42,24 +42,18 @@ void get_ideal_data(int N, Eigen::MatrixXd &vars, std::vector<Landmark> &data, d
     }
 }
 
-void add_noise(Eigen::MatrixXd &vars, std::vector<Landmark> &data) {
+void add_noise(Eigen::MatrixXd &vars, std::vector<Landmark> &data, std::default_random_engine &engine) {
     // add error
-    std::default_random_engine engine;
-    engine.seed((unsigned) time(0));
-    // engine.seed(3);
     std::normal_distribution<double> norm(0, 1);
 
     std::vector<double> vars_noise_unit{1 * _M, 1 * _M, 1 * _M, 
         radians(5), radians(5), radians(5), 2 * _MM, 2 * _UM, 2 * _UM};
 
-    // std::cout << " -- " << std::endl;
-
     // for data
     for (auto &element: data) {
-        // element.X += norm(engine) * 1 * _CM;
-        // element.Y += norm(engine) * 1 * _CM;
-        // element.Z += norm(engine) * 1 * _CM;
-        // std::cout << element.X << " " << element.Y << " " << element.Z << std::endl;
+        element.X += norm(engine) * 1 * _CM;
+        element.Y += norm(engine) * 1 * _CM;
+        element.Z += norm(engine) * 1 * _CM;
     }
     // for vars
     for (int i = 0; i < N_VARS; ++i) {
@@ -67,13 +61,12 @@ void add_noise(Eigen::MatrixXd &vars, std::vector<Landmark> &data) {
     }
 }
 
-void print(Eigen::MatrixXd &vars, std::string &label) {
+void print(const Eigen::MatrixXd &vars) {
 
+    auto _vars = vars;
     for (int k = 3; k <= 5; ++k) {
-        vars(k, 0) = degrees(vars(k, 0));
+        _vars(k, 0) = degrees(vars(k, 0));
     }
-
-    std::cout << std::endl << " -- " << label << " -- " << std::endl;
 
     std::vector<std::string> titles{"Xs", "Ys", "Zs", "th", "wo", "ka", "f", "x0", "y0"};
     for (auto title: titles) {
@@ -82,16 +75,12 @@ void print(Eigen::MatrixXd &vars, std::string &label) {
     printf("\n");
 
     for (int k = 0; k < 9; ++k) {
-        printf("%10.5e ", vars(k, 0));
+        printf("%10.5e ", _vars(k, 0));
     }
-    std::cout << std::endl;
-    for (int k = 3; k <= 5; ++k) {
-        vars(k, 0) = radians(vars(k, 0));
-    }
+    printf("\n");
 }
 
-void dump(std::vector<Landmark> &data, Eigen::MatrixXd &real, Eigen::MatrixXd &base, Eigen::MatrixXd &solved, std::vector<Eigen::MatrixXd> &errors, std::vector<Eigen::MatrixXd> &vars_solved_history) {
-    //
+void dump(const std::vector<Landmark> &data, const Eigen::MatrixXd &real, const Eigen::MatrixXd &base, const Eigen::MatrixXd &solved, const std::vector<Eigen::MatrixXd> &errors, const std::vector<Eigen::MatrixXd> &vars_solved_history) {
     int id = 0, _id = -1;
     std::ifstream if_id(FID, std::ios::in);
     if (!if_id) {
@@ -102,7 +91,7 @@ void dump(std::vector<Landmark> &data, Eigen::MatrixXd &real, Eigen::MatrixXd &b
         id = std::max(id, _id);
     }
     id += 1;
-    std::cout << std::endl << "* record id is " << id << std::endl;
+    std::cout << std::endl << "* saving the data into disk, the id is: " << id << std::endl;
 
     std::string vars_file = PVARS + std::to_string(id) + ".txt";
     std::string data_file = PDATA + std::to_string(id) + ".txt";

@@ -3,7 +3,7 @@
 
 #define N_VARS  9
 #define N_PRINT 25
-#define MAX_ITERS 1000
+#define MAX_ITERS 512
 
 #define LIMIT 1e-9f
 #define PI 3.141592653f

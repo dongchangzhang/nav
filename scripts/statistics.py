@@ -88,11 +88,15 @@ def draw(idx, where, title, xlabel, ylabel):
     plt.xlabel(xlabel)
     plt.gca().invert_xaxis()
     plt.ylabel(ylabel)
-    plt.plot(x, y)
+    # plt.plot(x, y)
     for i in range(len(_y)):
         for vy in _y[i]:
-            # if abs(vy - y[i]) < 1:
-            plt.scatter(x[i], vy, s=3, c='red')
+            if abs(vy - y[i]) < 10:
+                plt.scatter(x[i], vy - y[i], s=1, c='red')
+
+# draw(0, 111, 'Xs', 'distance (m)', 'value (m)')
+# plt.savefig('../output/statistics.png', dpi=500)
+# exit(0)
 
 draw(0, 331, 'Xs', 'distance (m)', 'value (m)')
 draw(1, 332, 'Ys', 'distance (m)', 'value (m)')

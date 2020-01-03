@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <random>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Eigen>
 
@@ -13,12 +14,12 @@ double radians(double degrees);
 
 double degrees(double radians);
 
-void get_ideal_data(int N, Eigen::MatrixXd &vars, std::vector<Landmark> &data, double len);
+void get_ideal_data(int N, const Eigen::MatrixXd &vars, std::vector<Landmark> &data, double len, std::default_random_engine &engine);
 
-void add_noise(Eigen::MatrixXd &vars, std::vector<Landmark> &data);
+void add_noise(Eigen::MatrixXd &vars, std::vector<Landmark> &data, std::default_random_engine &engine);
 
-void print(Eigen::MatrixXd &vars, std::string &label);
+void print(const Eigen::MatrixXd &vars);
 
-void dump(std::vector<Landmark> &data, Eigen::MatrixXd &real, Eigen::MatrixXd &base, Eigen::MatrixXd &solved, std::vector<Eigen::MatrixXd> &errors, std::vector<Eigen::MatrixXd> &vars_solved_history);
+void dump(const std::vector<Landmark> &data, const Eigen::MatrixXd &real, const Eigen::MatrixXd &base, const Eigen::MatrixXd &solved, const std::vector<Eigen::MatrixXd> &errors, const std::vector<Eigen::MatrixXd> &vars_solved_history);
 
 #endif

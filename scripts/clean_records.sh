@@ -1,9 +1,13 @@
 #!/bin/bash
 
-rm -rf ../records/id.txt
+/bin/rm -rf ../records/id.txt
+
 touch ../records/id.txt
 
-rm -rf ../records/vars/*
-rm -rf ../records/errors/*
-rm -rf ../records/data/*
-rm -rf ../records/vars_history/*
+/bin/rm -rf ../records/vars/*
+
+/bin/rm -rf ../records/errors/*
+
+/bin/rm -rf ../records/data/*
+
+/bin/rm -rf ../records/vars_history/*

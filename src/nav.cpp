@@ -6,7 +6,7 @@
 #include "constants.h"
 
 
-void gen_R_matrix(Eigen::MatrixXd &vars, Eigen::Matrix3d &R) {
+void gen_R_matrix(const Eigen::MatrixXd &vars, Eigen::Matrix3d &R) {
     double cth = cos(vars(3, 0));
     double sth = sin(vars(3, 0));
     double cwo = cos(vars(4, 0));
@@ -15,37 +15,25 @@ void gen_R_matrix(Eigen::MatrixXd &vars, Eigen::Matrix3d &R) {
     double ska = sin(vars(5, 0));
 
     R << cth * cka - sth * swo * ska, -cth * ska - sth * swo * cka, -sth * cwo,
-        cwo * ska, cwo * cka, -swo,
-        sth * cka + cth * swo * ska, -sth * ska + cth * swo * cka, cth * cwo;
+                           cwo * ska,                    cwo * cka, -swo,
+         sth * cka + cth * swo * ska, -sth * ska + cth * swo * cka, cth * cwo;
 }
 
-std::vector<double> get_coefficient(double px, double py, double f, double x0, double y0,
-                               double mZ, double th, double wo, double ka, Eigen::Matrix3d &R) {
-    double i_mZ = 1.0 / mZ;
-    //                 *- a1 R(0, 0)  a3 R(0, 2)
-    double a11 = i_mZ * (R(0, 0) * f + R(0, 2) * (px - x0));
-    //                  b1 R(1, 0)  b3 R(1, 2)
-    double a12 = i_mZ * (R(1, 0) * f + R(1, 2) * (px - x0));
-    //                  c1 R(2, 0)  c3 R(2, 2)
-    double a13 = i_mZ * (R(2, 0) * f + R(2, 2) * (px - x0));
-    //                  a2 R(0, 1)  a3 R(0, 2)
-    double a21 = i_mZ * (R(0, 1) * f + R(0, 2) * (py - y0));
-    //                  b2 R(1, 1)  b3 R(1, 2)
-    double a22 = i_mZ * (R(1, 1) * f + R(1, 2) * (py - y0));
-    //                 * b3 R(1, 2)  c3 R(2, 2)
-    double a23 = i_mZ * (R(2, 1) * f + R(2, 2) * (py - y0));
+std::vector<double> get_coefficient(double px, double py, double f, double x0, double y0, double mZ, double th, double wo, double ka, const Eigen::Matrix3d &R) {
+    double a11 = (R(0, 0) * f + R(0, 2) * (px - x0)) / mZ;
+    double a12 = (R(1, 0) * f + R(1, 2) * (px - x0)) / mZ;
+    double a13 = (R(2, 0) * f + R(2, 2) * (px - x0)) / mZ;
 
+    double a21 = (R(0, 1) * f + R(0, 2) * (py - y0)) / mZ;
+    double a22 = (R(1, 1) * f + R(1, 2) * (py - y0)) / mZ;
+    double a23 = (R(2, 1) * f + R(2, 2) * (py - y0)) / mZ;
 
-    double a14 =
-            (py - y0) * sin(wo) - ((px - x0) * ((px - x0) * cos(ka) - (py - y0) * sin(ka)) / f + f * cos(ka)) * cos(wo);
-    //double a14 =
-    //       (py - y0) * sin(wo) - ((px - x0) * ((px - x0) * cos(ka) - (py - y0) * sin(ka)) / f + f * cos(ka)) * cos(wo);
-    double a15 = -f * sin(ka) - (px - x0) * ((px - x0) * sin(ka) + (py - y0) * cos(ka)) / f;
+    double a14 = (py - y0) * sin(wo) - (((px - x0) / f) * ((px - x0) * cos(ka) - (py - y0) * sin(ka)) + f * cos(ka)) * cos(wo);
+    double a15 = -f * sin(ka) - ((px - x0) / f) * ((px - x0) * sin(ka) + (py - y0) * cos(ka));
     double a16 = py - y0;
 
-    double a24 = -(px - x0) * sin(wo) -
-                ((py - y0) * ((px - x0) * cos(ka) - (py - y0) * sin(ka)) / f - f * sin(ka)) * cos(wo);
-    double a25 = -f * cos(ka) - (py - y0) * ((px - x0) * sin(ka) + (py - y0) * cos(ka)) / f;
+    double a24 = -(px - x0) * sin(wo) - (((py - y0) / f) * ((px - x0) * cos(ka) - (py - y0) * sin(ka)) - f * sin(ka)) * cos(wo);
+    double a25 = -f * cos(ka) - ((py - y0) / f) * ((px - x0) * sin(ka) + (py - y0) * cos(ka));
     double a26 = -(px - x0);
 
     double a17 = (px - x0) / f;
@@ -59,7 +47,7 @@ std::vector<double> get_coefficient(double px, double py, double f, double x0, d
     return std::vector<double>{a11, a12, a13, a14, a15, a16, a17, a18, a19, a21, a22, a23, a24, a25, a26, a27, a28, a29};
 }
 
-std::vector<double> get_mean_XYZ(double X, double Y, double Z, Eigen::MatrixXd &vars, Eigen::Matrix3d &R) {
+std::vector<double> get_mean_XYZ(double X, double Y, double Z, const Eigen::MatrixXd &vars, const Eigen::Matrix3d &R) {
     //         a1 ->  R[0, 0]               b1 -> R[1, 0]                c1 -> R[2, 0]
     double mX = R(0, 0) * (X - vars(0, 0)) + R(1, 0) * (Y - vars(1, 0)) + R(2, 0) * (Z - vars(2, 0));
     //         a2 ->  R[0, 1]               b2 -> R[1, 1]                c2 -> R[2, 1]
@@ -70,7 +58,7 @@ std::vector<double> get_mean_XYZ(double X, double Y, double Z, Eigen::MatrixXd &
     return std::vector<double>{mX, mY, mZ};
 }
 
-void get_matrix_A_and_B(const int N, std::vector<Landmark> &data, Eigen::MatrixXd &vars, Eigen::Matrix3d &R, Eigen::MatrixXd &A, Eigen::MatrixXd &B) {
+void get_matrix_A_and_B(const int N, const std::vector<Landmark> &data, const Eigen::MatrixXd &vars, const Eigen::Matrix3d &R, Eigen::MatrixXd &A, Eigen::MatrixXd &B) {
     A = Eigen::MatrixXd::Zero(2 * N, 5 * N);
     B = Eigen::MatrixXd::Zero(2 * N, N_VARS);
     double th = vars(3, 0), wo = vars(4, 0), ka = vars(5, 0), f = vars(6, 0), x0 = vars(7, 0), y0 = vars(8, 0);
@@ -95,7 +83,7 @@ void get_matrix_A_and_B(const int N, std::vector<Landmark> &data, Eigen::MatrixX
     }
 }
 
-void get_vector_L(int N, std::vector<Landmark> &data, Eigen::MatrixXd &vars, Eigen::Matrix3d &R, Eigen::MatrixXd &L) {
+void get_vector_L(int N, const std::vector<Landmark> &data, const Eigen::MatrixXd &vars, const Eigen::Matrix3d &R, Eigen::MatrixXd &L) {
     L = Eigen::MatrixXd::Zero(2 * N, 1);
     std::vector<double> mean_XYZ;
     double px, py, mX, mY, mZ, x, y;
