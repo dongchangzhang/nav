@@ -14,7 +14,7 @@ double radians(double degrees);
 
 double degrees(double radians);
 
-void get_ideal_data(int N, const Eigen::MatrixXd &vars, std::vector<Landmark> &data, double len, std::default_random_engine &engine);
+void get_ideal_data(int N, const Eigen::MatrixXd &vars, std::vector<Landmark> &data, std::default_random_engine &engine);
 
 void add_noise(Eigen::MatrixXd &vars, std::vector<Landmark> &data, std::default_random_engine &engine);
 

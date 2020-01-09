@@ -1,8 +1,10 @@
 // vhdsih
+// 201912
 
 #include <cstdio>
 #include <cmath>
 #include <ctime>
+#include <chrono>
 #include <iostream>
 #include <vector>
 #include <random>
@@ -20,102 +22,127 @@
 using namespace std;
 using namespace Eigen;
 
-bool run(int n, double _x, double _y, double _z, std::default_random_engine &engine) {
-    double th = radians(2), wo = radians(2), ka = radians(2);
-    double f = 5 * _MM, x0 = 6 * _UM, y0 = 6 * _UM;
-
+bool run(int n, const MatrixXd &vars, std::default_random_engine &engine) {
     Matrix3d R;
-    MatrixXd A, B, L, diff, error, loss;
-    MatrixXd W, x, K, v;
-    MatrixXd vars = MatrixXd::Zero(N_VARS, 1); // vars{Xs, Ys, Zs, th, wo, ka, f, x0, y0};
-    MatrixXd vars_real, vars_base;
+    MatrixXd A, B, L, W, x, K, v; 
+    MatrixXd diff, error, loss, vars_real = vars, vars_base, vars_to_solved = vars;
 
     vector<MatrixXd> errors;
     vector<MatrixXd> vars_solved_history;
-    vector<Landmark> data, data_real, data_noise;
+    vector<Landmark> data, data_real, data_noised;
 
-    vars << _x * _M, _y * _M, _z * _M, th, wo, ka, f, x0, y0;
-
-    vars_real = vars;
-
-    double len = sqrt(_x * _x + _y * _y + _z * _z);
-    get_ideal_data(n, vars, data, len, engine);
+    get_ideal_data(n, vars, data, engine);
+    // backup 
     data_real = data;
 
     // add noise for vars and data
-    add_noise(vars, data, engine);
-    vars_base = vars;
-    data_noise = data;
+    add_noise(vars_to_solved, data, engine);
 
-    vars_solved_history.push_back(vars);
+    // backup
+    vars_base = vars_to_solved;
+    data_noised = data;
+
+    vars_solved_history.push_back(vars_to_solved);
 
     bool is_nan = false;
     for (int i = 0; i < MAX_ITERS; ++i) {
-        gen_R_matrix(vars, R);
-        get_matrix_A_and_B(n, data, vars, R, A, B);
-        get_vector_L(n, data, vars, R, L);
+        gen_R_matrix(vars_to_solved, R);
+        get_matrix_A_and_B(n, data, vars_to_solved, R, A, B);
+        get_vector_L(n, data, vars_to_solved, R, L);
 
         W = A * A.transpose();
         x = (B.transpose() * W * B).inverse() * B.transpose() * W * L;
         K = (A * A.transpose()).inverse() * (B * x - L);
         v = A.transpose() * K;
 
-        // update params
-        vars += x;
+        // update vars with dx
+        vars_to_solved += x;
 
-        // update data
+        // update data with dv
         for (int k = 0; k < n; ++k) {
             data[k].X += v(k * 5 + 2, 0);
             data[k].Y += v(k * 5 + 3, 0);
             data[k].Z += v(k * 5 + 4, 0);
         }
 
-        // calculate error
+        // calculating loss
         loss = x.transpose() * x;
 
-        if (loss(0, 0) > 1e3 ||isnan(loss(0, 0))) {
+        // is a bad calculate procedure ?
+        if (loss(0, 0) > 1e3 || isnan(loss(0, 0))) {
+            cerr << "nan" << endl;
             return false;
         }
-        diff = vars_real - vars;
+
+        // calculating real error (vars_real)
+        diff = vars_real - vars_to_solved;
         error = diff.transpose() * diff;
 
+        // backup
         errors.emplace_back(diff);
         vars_solved_history.push_back(vars);
 
+#ifdef LOGGING
         if (i % N_PRINT == 0)
             printf("step: %5d   loss: %10e   real_error: %10e\n", i, sqrt(loss(0, 0)), sqrt(error(0, 0)));
+#endif
 
-        // break rule
+        // when to leave
         if (sqrt(loss(0, 0)) < LIMIT)
             break;
     }
 
-    dump(data_real, vars_real, vars_base, vars, errors, vars_solved_history);
+#ifdef DUMP_DATA
+    dump(data_real, vars_real, vars_base, vars_to_solved, errors, vars_solved_history);
+#endif
 
-    // // show result
+    // show result
+#ifdef LOGGING
     cout << "solved:" << endl;
-    print(vars);
-    // print(history_vars_base);
-    // print(history_vars_real);
+    print(vars_to_solved);
+#endif
     return true;
 
 }
+
 int main() {
-    int n = 10, n_nan = 0;
+    int idx = 0, n_nan = 0;
+    Landmark position;
     Orbit orbit(60, 1010);
-    Landmark pos;
+
     std::default_random_engine engine;
     engine.seed((unsigned) time(0));
+    std::normal_distribution<double> norm(0, 1.0/3.0); // u, stddev -> (-1, 1)
 
-    pos = orbit.position(10);
-    while (orbit.update(10)) {
-        for (int i = 0; i < 100; ++i) {
-            pos = orbit.position(10);
-            auto yes = run(10, pos.X, pos.Y, pos.Z, engine);
+    MatrixXd vars = MatrixXd::Zero(N_VARS, 1); // vars {Xs, Ys, Zs, th, wo, ka, f, x0, y0};
+
+    chrono::steady_clock::time_point time_begin = chrono::steady_clock::now();
+    while (orbit.update(5)) {
+        position = orbit.position(10);
+        // assign new vars
+        vars(0, 0) = position.X;
+        vars(1, 0) = position.Y;
+        vars(2, 0) = position.Z;
+
+        vars(3, 0) = radians(2 + norm(engine));
+        vars(4, 0) = radians(2 + norm(engine));
+        vars(5, 0) = radians(2 + norm(engine));
+
+        vars(6, 0) = 7.6 * _MM;
+        vars(7, 0) = 6 * _UM;
+        vars(8, 0) = 6 * _UM;
+        for (int i = 0; i < N_REPEAT; ++i) {
+            ++idx;
+            auto yes = run(10, vars, engine);
             if (!yes) ++n_nan;
         }
+#ifdef RUN_NOTICE
+        if (idx % 200 == 0) cout << "." << endl;
+#endif
     }
-
-    cout << "bad: " << n_nan << endl;
+    chrono::steady_clock::time_point time_end = chrono::steady_clock::now();
+    chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(time_end - time_begin);
+    double ms_used = time_used.count() * 1000.0;
+    printf("\n[INFO] Iteration count: %8d  |  Bad iter count: %8d  |  Time used: %10lf ms\n", idx, n_nan, ms_used);
     return 0;
 }

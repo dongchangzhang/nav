@@ -91,7 +91,7 @@ def draw(idx, where, title, xlabel, ylabel):
     # plt.plot(x, y)
     for i in range(len(_y)):
         for vy in _y[i]:
-            if abs(vy - y[i]) < 10:
+            if abs(vy - y[i]) < 30:
                 plt.scatter(x[i], vy - y[i], s=1, c='red')
 
 # draw(0, 111, 'Xs', 'distance (m)', 'value (m)')

@@ -15,11 +15,13 @@ double degrees(double radians) {
     return radians * 180.0 / PI;
 }
 
-void get_ideal_data(int N, const Eigen::MatrixXd &vars, std::vector<Landmark> &data, double len, std::default_random_engine &engine) {
+void get_ideal_data(int N, const Eigen::MatrixXd &vars, std::vector<Landmark> &data, std::default_random_engine &engine) {
+
     Eigen::Matrix3d R;
     gen_R_matrix(vars, R);
+    double len = sqrt(vars(0, 0) * vars(0, 0) + vars(1, 0) * vars(1, 0) + vars(2, 0) * vars(2, 0));
     double boundary = len * tan(radians(22));
-    std::normal_distribution<double> norm(0, sqrt(1/3.0));
+    std::normal_distribution<double> norm(0, 1/3.0); // u, stddev -> (-1, 1)
 
     // std::uniform_real_distribution<double> rand_xy(-boundary * 0.8, boundary * 0.8);
     // std::uniform_real_distribution<double> rand_z(-10, 10);
@@ -44,17 +46,23 @@ void get_ideal_data(int N, const Eigen::MatrixXd &vars, std::vector<Landmark> &d
 
 void add_noise(Eigen::MatrixXd &vars, std::vector<Landmark> &data, std::default_random_engine &engine) {
     // add error
-    std::normal_distribution<double> norm(0, 1);
+    std::normal_distribution<double> norm(0, 1/3.0);
 
-    std::vector<double> vars_noise_unit{1 * _M, 1 * _M, 1 * _M, 
-        radians(5), radians(5), radians(5), 2 * _MM, 2 * _UM, 2 * _UM};
+    // std::vector<double> vars_noise_unit{1 * _M, 1 * _M, 1 * _M, 
+        // radians(5), radians(5), radians(5), 2 * _MM, 2 * _UM, 2 * _UM};
+    std::vector<double> vars_noise_unit{
+        NOISE_VARS_XYZ, NOISE_VARS_XYZ, NOISE_VARS_XYZ, 
+        NOISE_VARS_ROTATE, NOISE_VARS_ROTATE, NOISE_VARS_ROTATE,
+        NOISE_VARS_F, NOISE_VARS_X0Y0, NOISE_VARS_X0Y0
+    };
 
     // for data
     for (auto &element: data) {
-        element.X += norm(engine) * 1 * _CM;
-        element.Y += norm(engine) * 1 * _CM;
-        element.Z += norm(engine) * 1 * _CM;
+        element.X += norm(engine) * NOISE_DATA_XYZ;
+        element.Y += norm(engine) * NOISE_DATA_XYZ;
+        element.Z += norm(engine) * NOISE_DATA_XYZ;
     }
+
     // for vars
     for (int i = 0; i < N_VARS; ++i) {
         vars(i, 0) += vars_noise_unit[i] * norm(engine);
@@ -91,7 +99,10 @@ void dump(const std::vector<Landmark> &data, const Eigen::MatrixXd &real, const 
         id = std::max(id, _id);
     }
     id += 1;
+
+#ifdef LOGGING
     std::cout << std::endl << "* saving the data into disk, the id is: " << id << std::endl;
+#endif
 
     std::string vars_file = PVARS + std::to_string(id) + ".txt";
     std::string data_file = PDATA + std::to_string(id) + ".txt";

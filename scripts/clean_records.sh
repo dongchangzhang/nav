@@ -1,8 +1,6 @@
 #!/bin/bash
 
-/bin/rm -rf ../records/id.txt
-
-touch ../records/id.txt
+cat /dev/null > ../records/id.txt
 
 /bin/rm -rf ../records/vars/*
 
