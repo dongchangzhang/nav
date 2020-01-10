@@ -6,6 +6,7 @@
 #include <ctime>
 #include <chrono>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <random>
 #include <string>
@@ -116,8 +117,18 @@ int main() {
 
     MatrixXd vars = MatrixXd::Zero(N_VARS, 1); // vars {Xs, Ys, Zs, th, wo, ka, f, x0, y0};
 
+#ifdef CALCU_TIME
+    double len, _c;
+    vector<pair<double, double>> times;
+    chrono::steady_clock::time_point _a, _b;
+#endif
+
     chrono::steady_clock::time_point time_begin = chrono::steady_clock::now();
     while (orbit.update(5)) {
+
+#ifdef CALCU_TIME
+        _a = chrono::steady_clock::now();
+#endif
         position = orbit.position(10);
         // assign new vars
         vars(0, 0) = position.X;
@@ -131,18 +142,35 @@ int main() {
         vars(6, 0) = 7.6 * _MM;
         vars(7, 0) = 6 * _UM;
         vars(8, 0) = 6 * _UM;
+
         for (int i = 0; i < N_REPEAT; ++i) {
             ++idx;
             auto yes = run(10, vars, engine);
             if (!yes) ++n_nan;
         }
+
+#ifdef CALCU_TIME
+        _b = chrono::steady_clock::now();
+        _c = chrono::duration<double, std::micro>(_b - _a).count() / N_REPEAT;
+        len = sqrt(vars(0, 0) * vars(0, 0) + vars(1, 0) * vars(1, 0) + vars(2, 0) * vars(2, 0));
+        times.emplace_back(pair<double, double>(len, _c));
+#endif
+
 #ifdef RUN_NOTICE
         if (idx % 200 == 0) cout << "." << endl;
 #endif
     }
     chrono::steady_clock::time_point time_end = chrono::steady_clock::now();
-    chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(time_end - time_begin);
-    double ms_used = time_used.count() * 1000.0;
-    printf("\n[INFO] Iteration count: %8d  |  Bad iter count: %8d  |  Time used: %10lf ms\n", idx, n_nan, ms_used);
+    double us = chrono::duration<double, std::micro>(time_end - time_begin).count();
+    printf("\n[INFO] Iteration count: %8d  |  Bad iter count: %8d  |  Time used: %10lf us\n", idx, n_nan, us);
+
+#ifdef CALCU_TIME
+    ofstream of("times.txt");
+    for (auto t: times) {
+        of << t.first << " " << t.second << endl;
+    }
+    of.close();
+#endif
+    
     return 0;
 }

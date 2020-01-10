@@ -2,9 +2,10 @@
 #define NAV_CONSTANTS
 
 // switch
-#define DUMP_DATA
+// #define DUMP_DATA
 // #define LOGGING
 #define RUN_NOTICE
+#define CALCU_TIME
 
 // N constants
 #define N_VARS  9
@@ -13,7 +14,7 @@
 #define MAX_ITERS 512
 
 // limitation of iteration
-#define LIMIT 1e-9f
+#define LIMIT 1e-8f
 
 // length base
 #define _M 1.0f
@@ -24,7 +25,7 @@
 // math
 #define PI 3.141592653f
 
-// noise
+// noise base
 #define NOISE_DATA_XYZ (1.0 * _CM)
 #define NOISE_VARS_XYZ (1 * _M)
 #define NOISE_VARS_ROTATE (5 * PI / 180.0)
