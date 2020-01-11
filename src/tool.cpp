@@ -1,4 +1,6 @@
-
+// calling lp :: 20 号 晚上 7点
+// 报告地形相对导航的参考文献 20篇以上 + 10篇英文
+// 为啥越近效果越差??
 #include "tool.h"
 #include "nav.h"
 
@@ -15,22 +17,34 @@ double degrees(double radians) {
     return radians * 180.0 / PI;
 }
 
+void k_means(const std::vector<Landmark> &data, std::vector<std::vector<Landmark>> &result) {
+    
+}
+
 void get_ideal_data(int N, const Eigen::MatrixXd &vars, std::vector<Landmark> &data, std::default_random_engine &engine) {
 
     Eigen::Matrix3d R;
     gen_R_matrix(vars, R);
     double len = sqrt(vars(0, 0) * vars(0, 0) + vars(1, 0) * vars(1, 0) + vars(2, 0) * vars(2, 0));
     double boundary = len * tan(radians(22));
+
     std::normal_distribution<double> norm(0, 1/3.0); // u, stddev -> (-1, 1)
 
-    // std::uniform_real_distribution<double> rand_xy(-boundary * 0.8, boundary * 0.8);
-    // std::uniform_real_distribution<double> rand_z(-10, 10);
+    std::normal_distribution<double> norm_x(0, 1/3.0), norm_y(0, 1/3.0), norm_z(0, 1/3.0);
+    std::uniform_real_distribution<double> rand_x(-0.9, 0.9);
+    std::uniform_real_distribution<double> rand_y(-0.9,  0.9);
+    std::uniform_real_distribution<double> rand_z(-0.9, 0.9);
 
     double X, Y, Z, mX, mY, mZ, x, y;
     for (int i = 0; i < N; ++i) {
-        X = norm(engine) * boundary;
-        Y = norm(engine) * boundary;
-        Z = norm(engine) * boundary;
+        // X = norm(engine) * boundary;
+        // Y = norm(engine) * boundary;
+        // Z = norm(engine) * boundary;
+
+        X = rand_x(engine) * boundary;
+        Y = rand_y(engine) * boundary;
+        Z = rand_z(engine) * boundary;
+        // std::cout << X << " " << Y << " " << Z << std::endl;
 
         auto mean_XYZ = get_mean_XYZ(X, Y, Z, vars, R);
 
@@ -45,28 +59,30 @@ void get_ideal_data(int N, const Eigen::MatrixXd &vars, std::vector<Landmark> &d
 }
 
 void add_noise(Eigen::MatrixXd &vars, std::vector<Landmark> &data, std::default_random_engine &engine) {
-    // add error
-    std::normal_distribution<double> norm(0, 1/3.0);
-
-    // std::vector<double> vars_noise_unit{1 * _M, 1 * _M, 1 * _M, 
-        // radians(5), radians(5), radians(5), 2 * _MM, 2 * _UM, 2 * _UM};
-    std::vector<double> vars_noise_unit{
-        NOISE_VARS_XYZ, NOISE_VARS_XYZ, NOISE_VARS_XYZ, 
-        NOISE_VARS_ROTATE, NOISE_VARS_ROTATE, NOISE_VARS_ROTATE,
-        NOISE_VARS_F, NOISE_VARS_X0Y0, NOISE_VARS_X0Y0
-    };
+    std::normal_distribution<double> norm_x(0, 1/3.0), norm_y(0, 1/3.0), norm_z(0, 1/3.0);
+    std::normal_distribution<double> norm_f(0, 1/3.0), norm_x0(0, 1/3.0), norm_y0(0, 1/3.0);
+    std::normal_distribution<double> norm_th(0, 1/3.0), norm_wo(0, 1/3.0), norm_ka(0, 1/3.0);
+    std::normal_distribution<double> norm_data_x(0, 1/3.0), norm_data_y(0, 1/3.0), norm_data_z(0, 1/3.0);
 
     // for data
     for (auto &element: data) {
-        element.X += norm(engine) * NOISE_DATA_XYZ;
-        element.Y += norm(engine) * NOISE_DATA_XYZ;
-        element.Z += norm(engine) * NOISE_DATA_XYZ;
+        element.X += norm_data_x(engine) * NOISE_DATA_XYZ;
+        element.Y += norm_data_y(engine) * NOISE_DATA_XYZ;
+        element.Z += norm_data_z(engine) * NOISE_DATA_XYZ;
     }
 
     // for vars
-    for (int i = 0; i < N_VARS; ++i) {
-        vars(i, 0) += vars_noise_unit[i] * norm(engine);
-    }
+    vars(0, 0) += norm_x(engine) * NOISE_VARS_XYZ;
+    vars(1, 0) += norm_y(engine) * NOISE_VARS_XYZ;
+    vars(2, 0) += norm_z(engine) * NOISE_VARS_XYZ;
+
+    vars(3, 0) += norm_th(engine) * NOISE_VARS_ROTATE;
+    vars(4, 0) += norm_wo(engine) * NOISE_VARS_ROTATE;
+    vars(5, 0) += norm_ka(engine) * NOISE_VARS_ROTATE;
+
+    vars(6, 0) += norm_f(engine) * NOISE_VARS_F;
+    vars(7, 0) += norm_x0(engine) * NOISE_VARS_X0Y0;
+    vars(8, 0) += norm_y0(engine) * NOISE_VARS_X0Y0;
 }
 
 void print(const Eigen::MatrixXd &vars) {

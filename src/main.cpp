@@ -77,6 +77,15 @@ bool run(int n, const MatrixXd &vars, std::default_random_engine &engine) {
 
         // calculating real error (vars_real)
         diff = vars_real - vars_to_solved;
+        //
+        diff(3, 0) = degrees(diff(3, 0));
+        diff(4, 0) = degrees(diff(4, 0));
+        diff(5, 0) = degrees(diff(5, 0));
+
+        diff(6, 0) *= 1e3;
+        diff(7, 0) *= 1e6;
+        diff(8, 0) *= 1e6;
+
         error = diff.transpose() * diff;
 
         // backup
@@ -148,8 +157,8 @@ int main() {
             auto yes = run(10, vars, engine);
             if (!yes) ++n_nan;
         }
-
 #ifdef CALCU_TIME
+
         _b = chrono::steady_clock::now();
         _c = chrono::duration<double, std::micro>(_b - _a).count() / N_REPEAT;
         len = sqrt(vars(0, 0) * vars(0, 0) + vars(1, 0) * vars(1, 0) + vars(2, 0) * vars(2, 0));

@@ -2,14 +2,17 @@
 #define NAV_CONSTANTS
 
 // switch
-// #define DUMP_DATA
+#define DUMP_DATA
 // #define LOGGING
 #define RUN_NOTICE
 #define CALCU_TIME
 
+#define LOAD_DATA_FROM_DISK
+#define GENERATE_DATA
+
 // N constants
 #define N_VARS  9
-#define N_PRINT 25
+#define N_PRINT 1
 #define N_REPEAT 20
 #define MAX_ITERS 512
 
