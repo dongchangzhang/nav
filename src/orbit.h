@@ -4,7 +4,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "landmark.h"
+#include "point3.h"
 #include "tool.h"
 
 struct Orbit {
@@ -16,11 +16,11 @@ struct Orbit {
         }
     }
 
-    inline Landmark position(double beta) {
+    inline Point3 position(double beta) {
         double x = now * cos(radians(alpha)) * cos(radians(beta));
         double y = now * cos(radians(alpha)) * sin(radians(beta));
         double z = now * sin(radians(alpha));
-        return Landmark(x, y, z, 0, 0);
+        return Point3(x, y, z);
     }
 
     inline bool update(double forward) {

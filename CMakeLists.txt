@@ -7,4 +7,4 @@ add_executable(nav src/main.cpp
     src/nav.h src/nav.cpp 
     src/tool.h src/tool.cpp 
     src/landmark.h src/landmark.cpp 
-    src/orbit.h src/point.h src/constants.h)
+    src/orbit.h src/point.h src/point3.h src/constants.h)

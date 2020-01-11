@@ -1,6 +1,7 @@
 // calling lp :: 20 号 晚上 7点
 // 报告地形相对导航的参考文献 20篇以上 + 10篇英文
 // 为啥越近效果越差??
+
 #include "tool.h"
 #include "nav.h"
 
@@ -17,9 +18,34 @@ double degrees(double radians) {
     return radians * 180.0 / PI;
 }
 
-void k_means(const std::vector<Landmark> &data, std::vector<std::vector<Landmark>> &result) {
-    
+void filter(int N, const std::vector<Point3> &data, std::vector<Point3> &result) {
+    int which;
+    double value, now;
+    std::vector<bool> mask(data.size(), false);
+    // pick one to init
+    mask[0] = true;
+    result.push_back(data[0]);
+
+    while (result.size() < N) {
+        value = 0;
+        which = 0;
+        for (int i = 0; i < data.size(); ++i) {
+            if (!mask[i]) {
+                now = 0;
+                for (int j = 0; j < result.size(); ++j) {
+                    now += result[j].dist(data[i], false, false, true);
+                }
+                if (now > value) {
+                    which = i;
+                    value = now;
+                }
+            }
+        }
+        mask[which] = true;
+        result.push_back(data[which]);
+    }
 }
+
 
 void get_ideal_data(int N, const Eigen::MatrixXd &vars, std::vector<Landmark> &data, std::default_random_engine &engine) {
 
@@ -28,34 +54,41 @@ void get_ideal_data(int N, const Eigen::MatrixXd &vars, std::vector<Landmark> &d
     double len = sqrt(vars(0, 0) * vars(0, 0) + vars(1, 0) * vars(1, 0) + vars(2, 0) * vars(2, 0));
     double boundary = len * tan(radians(22));
 
-    std::normal_distribution<double> norm(0, 1/3.0); // u, stddev -> (-1, 1)
-
     std::normal_distribution<double> norm_x(0, 1/3.0), norm_y(0, 1/3.0), norm_z(0, 1/3.0);
     std::uniform_real_distribution<double> rand_x(-0.9, 0.9);
-    std::uniform_real_distribution<double> rand_y(-0.9,  0.9);
+    std::uniform_real_distribution<double> rand_y(-0.9, 0.9);
     std::uniform_real_distribution<double> rand_z(-0.9, 0.9);
 
     double X, Y, Z, mX, mY, mZ, x, y;
-    for (int i = 0; i < N; ++i) {
-        // X = norm(engine) * boundary;
-        // Y = norm(engine) * boundary;
-        // Z = norm(engine) * boundary;
+    std::vector<Point3> raw_data, filtered_data;
+    while (raw_data.size() < N * N_TIMES_TO_GEN_DATA) {
+        // X = norm_x(engine) * boundary;
+        // Y = norm_y(engine) * boundary;
+        // Z = norm_z(engine) * boundary;
 
         X = rand_x(engine) * boundary;
         Y = rand_y(engine) * boundary;
         Z = rand_z(engine) * boundary;
-        // std::cout << X << " " << Y << " " << Z << std::endl;
 
-        auto mean_XYZ = get_mean_XYZ(X, Y, Z, vars, R);
+        if (fabs(X) < DATA_LIMIT || fabs(Y) < DATA_LIMIT || fabs(Z) < DATA_LIMIT) {
+            continue;
+        }
 
+        raw_data.emplace_back(Point3(X, Y, Z));
+    }
+
+    filter(N, raw_data, filtered_data);
+
+    for (auto pos: filtered_data) {
+        auto mean_XYZ = get_mean_XYZ(pos.x, pos.y, pos.z, vars, R);
         mX = mean_XYZ[0];
         mY = mean_XYZ[1];
         mZ = mean_XYZ[2];
-
         x = vars(7, 0) - vars(6, 0) * mX / mZ;
         y = vars(8, 0) - vars(6, 0) * mY / mZ;
-        data.emplace_back(Landmark(X, Y, Z, x, y));
+        data.emplace_back(Landmark(pos.x, pos.y, pos.z, x, y));
     }
+
 }
 
 void add_noise(Eigen::MatrixXd &vars, std::vector<Landmark> &data, std::default_random_engine &engine) {
@@ -66,9 +99,9 @@ void add_noise(Eigen::MatrixXd &vars, std::vector<Landmark> &data, std::default_
 
     // for data
     for (auto &element: data) {
-        element.X += norm_data_x(engine) * NOISE_DATA_XYZ;
-        element.Y += norm_data_y(engine) * NOISE_DATA_XYZ;
-        element.Z += norm_data_z(engine) * NOISE_DATA_XYZ;
+        element.xyz.x += norm_data_x(engine) * NOISE_DATA_XYZ;
+        element.xyz.y += norm_data_y(engine) * NOISE_DATA_XYZ;
+        element.xyz.z += norm_data_z(engine) * NOISE_DATA_XYZ;
     }
 
     // for vars
@@ -149,7 +182,7 @@ void dump(const std::vector<Landmark> &data, const Eigen::MatrixXd &real, const 
     // write data
     std::ofstream of_data(data_file);
     for (auto landmark : data) {
-        of_data << landmark.X << " " << landmark.Y << " " << landmark.Z << " " << landmark.px << " " << landmark.py
+        of_data << landmark.xyz.x << " " << landmark.xyz.y << " " << landmark.xyz.z << " " << landmark.xy.x << " " << landmark.xy.y
                 << std::endl;
     }
     of_data.close();

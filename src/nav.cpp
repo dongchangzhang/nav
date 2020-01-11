@@ -65,9 +65,9 @@ void get_matrix_A_and_B(const int N, const std::vector<Landmark> &data, const Ei
     double px, py, mZ;
     std::vector<double> axx;
     for (int i = 0; i < N; ++i) {
-        px = data[i].px;
-        py = data[i].py;
-        auto mean_XYZ = get_mean_XYZ(data[i].X, data[i].Y, data[i].Z, vars, R);
+        px = data[i].xy.x;
+        py = data[i].xy.y;
+        auto mean_XYZ = get_mean_XYZ(data[i].xyz.x, data[i].xyz.y, data[i].xyz.z, vars, R);
         mZ = mean_XYZ[2];
 
         axx = get_coefficient(px, py, f, x0, y0, mZ, th, wo, ka, R);
@@ -88,9 +88,9 @@ void get_vector_L(int N, const std::vector<Landmark> &data, const Eigen::MatrixX
     std::vector<double> mean_XYZ;
     double px, py, mX, mY, mZ, x, y;
     for (int i = 0; i < N; ++i) {
-        px = data[i].px;
-        py = data[i].py;
-        mean_XYZ = get_mean_XYZ(data[i].X, data[i].Y, data[i].Z, vars, R);
+        px = data[i].xy.x;
+        py = data[i].xy.y;
+        mean_XYZ = get_mean_XYZ(data[i].xyz.x, data[i].xyz.y, data[i].xyz.z, vars, R);
         mX = mean_XYZ[0];
         mY = mean_XYZ[1];
         mZ = mean_XYZ[2];

@@ -14,10 +14,13 @@
 #define N_VARS  9
 #define N_PRINT 1
 #define N_REPEAT 20
+#define N_TIMES_TO_GEN_DATA 10
 #define MAX_ITERS 512
 
 // limitation of iteration
 #define LIMIT 1e-8f
+
+#define DATA_LIMIT 1e-2f
 
 // length base
 #define _M 1.0f

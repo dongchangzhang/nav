@@ -61,9 +61,9 @@ bool run(int n, const MatrixXd &vars, std::default_random_engine &engine) {
 
         // update data with dv
         for (int k = 0; k < n; ++k) {
-            data[k].X += v(k * 5 + 2, 0);
-            data[k].Y += v(k * 5 + 3, 0);
-            data[k].Z += v(k * 5 + 4, 0);
+            data[k].xyz.x += v(k * 5 + 2, 0);
+            data[k].xyz.y += v(k * 5 + 3, 0);
+            data[k].xyz.z += v(k * 5 + 4, 0);
         }
 
         // calculating loss
@@ -117,7 +117,7 @@ bool run(int n, const MatrixXd &vars, std::default_random_engine &engine) {
 
 int main() {
     int idx = 0, n_nan = 0;
-    Landmark position;
+    Point3 position;
     Orbit orbit(60, 1010);
 
     std::default_random_engine engine;
@@ -140,9 +140,9 @@ int main() {
 #endif
         position = orbit.position(10);
         // assign new vars
-        vars(0, 0) = position.X;
-        vars(1, 0) = position.Y;
-        vars(2, 0) = position.Z;
+        vars(0, 0) = position.x;
+        vars(1, 0) = position.y;
+        vars(2, 0) = position.z;
 
         vars(3, 0) = radians(2 + norm(engine));
         vars(4, 0) = radians(2 + norm(engine));
